@@ -90,22 +90,31 @@ while True:
     elif estado_juego == "MEDICION":
         # Cronómetro en tiempo real
         tiempo_en_vivo = time.ticks_diff(tiempo_actual, tiempo_senal_go)   
-        tm1638.displayNumber(tiempo_en_vivo)
-
+        
+        if time.ticks_diff(tiempo_actual, tiempo_senal_go) < 1000:
+            tm1638.sendData(6 << 1, 0x7D) # 'G'
+            tm1638.sendData(7 << 1, 0x3F) # 'O'
+            tiempo_paso_cuenta = time.ticks_ms()
+            if evento_tecla != 0:
+                tiempo_jugador = tiempo_en_vivo 
+                tiempo_llegada_fin = time.ticks_ms() 
+                estado_juego = "FIN"
+        else:
+            tm1638.displayNumber(tiempo_en_vivo)
+            if evento_tecla != 0:
+                tiempo_jugador = tiempo_en_vivo 
+                tiempo_llegada_fin = time.ticks_ms() 
+                estado_juego = "FIN"
         
         # Captura de reacción del operador
-        if evento_tecla != 0:
-            tiempo_jugador = tiempo_en_vivo 
-            tiempo_llegada_fin = time.ticks_ms() 
-            estado_juego = "FIN"
+        
         
     elif estado_juego == "FIN":
         # Protegemos el mensaje 'FAIL' de ser sobrescrito por un '0'
         if tiempo_jugador != 0:
             tm1638.clearLeds()
             tm1638.displayNumber(tiempo_jugador)
-            #tm1638.sendData(0 << 1, 0x3D) # 'G'
-            #tm1638.sendData(1 << 1, 0x3F) # 'O'
+
         # Enclavamiento visual y reinicio del sistema
         if evento_tecla != 0 and time.ticks_diff(tiempo_actual, tiempo_llegada_fin) > 1500:
             estado_juego = "INICIO"
